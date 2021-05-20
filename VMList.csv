@@ -1,0 +1,7 @@
+﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
+Win10-21H1ENT,21H1ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
+Win10-20H2ENT,20H2ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
+Win10-2004ENT,2004ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
+Win10-1909ENT,1909ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
+Win10-1809ENT,1809ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
+Server2019DC,Server2019DC,vsanDatastore,Lab,Server,60,4,4,4,128MB,vmx-14,windows2019srv_64Guest
