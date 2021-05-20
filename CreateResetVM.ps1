@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.1
+    Version:        1.2
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2021/05/19
+    Creation Date:  2021/05/20
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -51,13 +51,13 @@ param([string]$vmListFile = “vmlist.csv”, [string] $vCenterUser, [string] $vCent
 #                                    Variables                                 #
 ################################################################################
 #vSphere settings and credentials
-$vCenterServer                     = "vcenter.domain.com"
-$ClusterName                       = "Cluster"
+$vCenterServer                     = "vcenter3.eucmobility.com"
+$ClusterName                       = "SM-Cluster"
 $ResourcePoolName                  = ""
 $scsiControllerType                = "ParaVirtual" # ParaVirtual or VirtualLsiLogicSAS
 
 #SQL Server settings for MDT database
-$SQLServer                         = "mdt"
+$SQLServer                         = "sql1"
 $SQLPort                           = 1433
 $SQLDatabase                       = "mdt"
 $SQLIntegratedAuth                 = $True
@@ -129,7 +129,7 @@ function CreateVM ($vm)
     Write-Host ("Set Network Adapter to vmxnet3") -ForegroundColor Yellow
     $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -NetworkName $vm.Network -Confirm:$false
 
-    #Set Video Displays and Memory 
+    #Set Video Displays and Memory and deselect Secure Boot
     Write-Host ("Configure Video to " + $vm.Displays + " displays and " + $vm.VideoMem + " video RAM") -ForegroundColor Yellow
     $vmobj | %{
         $vid = $_.ExtensionData.Config.Hardware.Device | ?{$_.GetType().Name -eq "VirtualMachineVideoCard"}
@@ -140,8 +140,16 @@ function CreateVM ($vm)
         $vid.VideoRamSizeInKB = $vm.VideoMem/1KB
         $devChange.Device += $vid
         $spec.DeviceChange += $devChange
+
+        #Deslect Secure Boot 
+        $spec.Firmware = [VMware.Vim.GuestOsDescriptorFirmwareType]::efi
+        $boot = New-Object VMware.Vim.VirtualMachineBootOptions
+        $boot.EfiSecureBootEnabled = $false
+        $spec.BootOptions = $boot
+
         $_.ExtensionData.ReconfigVM($spec)
     }
+
     #Set Advanced Configuration Parameters
     Write-Host ("Set Advanced Configuration Parameters: devices.hotplug = false") -ForegroundColor Yellow
     $vmobj | New-AdvancedSetting -Name devices.hotplug -Value FALSE -Confirm:$False
@@ -159,7 +167,7 @@ function ResetVM ($vm)
     $snaps = Get-Snapshot -VM $vmobj
     ForEach ($snap in $snaps)
     {
-        Write-Host ("Deleting dnapshot") -ForegroundColor Yellow
+        Write-Host ("Deleting snapshot") -ForegroundColor Yellow
         Remove-Snapshot -Snapshot $snap -RemoveChildren -Confirm:$false
     }          
 
