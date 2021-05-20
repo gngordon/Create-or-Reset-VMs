@@ -10,22 +10,22 @@ Helps with creating new VMs or resetting existing VMs. This is intended to be us
 	* GUI that allows selection of VMs from a list in a comma separated file that contains the VM names and specifications.
 
 USAGE
-	.\createresetvm.ps1 [vmlist.csv] [vCenterUser] [vCenterPassword] [MDTUser] [MDTPassword]
+.\createresetvm.ps1 [vmlist.csv] [vCenterUser] [vCenterPassword] [MDTUser] [MDTPassword]
 
 WHERE
-	vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
-	vCenterUser      = Username for vCenter Server.
-	vCenterPassword  = Password for vCenter Server user.
-	MDTUser          = Username with rights to the MDT SQL database.
-	MDTPassword      = Password for MDT database user
+vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
+vCenterUser      = Username for vCenter Server.
+vCenterPassword  = Password for vCenter Server user.
+MDTUser          = Username with rights to the MDT SQL database.
+MDTPassword      = Password for MDT database user
 
 EXAMPLES
-	.\createresetvm.ps1
-	.\createresetvm.ps1 mylist.csv
-	.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1!
-	.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1! mdtuser sqlpassword
+.\createresetvm.ps1
+.\createresetvm.ps1 mylist.csv
+.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1!
+.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1! mdtuser sqlpassword
 
 REQUIREMENTS
-	* Requires PowerCLI.
-	* Change variables for vCenter and the MDT SQL database.
-	* List of VMs in comma separated file.
+Requires PowerCLI.
+Change variables for vCenter and the MDT SQL database.
+List of VMs in comma separated file.
