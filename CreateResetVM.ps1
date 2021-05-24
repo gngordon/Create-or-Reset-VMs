@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.2
+    Version:        1.3
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2021/05/20
+    Creation Date:  2021/05/24
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -111,7 +111,7 @@ function CreateVM ($vm)
 #               Function CreateVM                                              #
 ################################################################################
     New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vm.vCPU -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder
-   
+
     $vmobj = Get-VM -Name $vm.Name
   
     #Reserve Memory
@@ -125,9 +125,21 @@ function CreateVM ($vm)
     $scsiController = Get-HardDisk -VM $vm.Name | Select -First 1 | Get-ScsiController
     Set-ScsiController -ScsiController $scsiController -Type $scsiControllerType
 
-    #Change Network Adapter to vmxnet3 and attach to selected network
+    #Change Network Adapter to vmxnet3
     Write-Host ("Set Network Adapter to vmxnet3") -ForegroundColor Yellow
-    $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -NetworkName $vm.Network -Confirm:$false
+    $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
+
+    #Attach Network Adapter to correct portgroup
+    Write-Host ("Connect to Network: " + $vm.Network) -ForegroundColor Yellow
+    $pg = Get-VirtualPortGroup -Name $vm.Network
+    If ($pg.ExtensionData.Config)
+    {
+        $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Portgroup $vm.Network -Confirm:$false #Portgroup on Distributed virtual switch
+    }
+    else
+    {
+        $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName $vm.Network -Confirm:$false #Portgroup on Standard virtual switch
+    }
 
     #Set Video Displays and Memory and deselect Secure Boot
     Write-Host ("Configure Video to " + $vm.Displays + " displays and " + $vm.VideoMem + " video RAM") -ForegroundColor Yellow
@@ -141,7 +153,7 @@ function CreateVM ($vm)
         $devChange.Device += $vid
         $spec.DeviceChange += $devChange
 
-        #Deslect Secure Boot 
+        #Deselect Secure Boot 
         $spec.Firmware = [VMware.Vim.GuestOsDescriptorFirmwareType]::efi
         $boot = New-Object VMware.Vim.VirtualMachineBootOptions
         $boot.EfiSecureBootEnabled = $false
@@ -169,7 +181,7 @@ function ResetVM ($vm)
     {
         Write-Host ("Deleting snapshot") -ForegroundColor Yellow
         Remove-Snapshot -Snapshot $snap -RemoveChildren -Confirm:$false
-    }          
+    }
 
     #Delete the old hard disk and create a new hard disk
     Write-Host ("Deleting old hard disk") -ForegroundColor Yellow
@@ -374,6 +386,7 @@ function Define_GUI
 ################################################################################
 #              Main                                                            #
 ################################################################################
+Clear-Host
 $global:vmlist = Import-Csv $vmListFile
 
 Define_GUI
