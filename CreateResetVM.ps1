@@ -293,7 +293,7 @@ function Define_GUI
     Add-Type -AssemblyName System.Drawing
 
     $global:form                     = New-Object System.Windows.Forms.Form
-    $form.Text                       = 'Create or Reset Virual Machines'
+    $form.Text                       = 'Create or Reset Virtual Machines'
     $form.Size                       = New-Object System.Drawing.Size(500,400)
     #$form.Autosize                   = $true
     $form.StartPosition              = 'CenterScreen'
