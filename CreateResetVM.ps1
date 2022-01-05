@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.3
+    Version:        1.4
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2021/05/24
+    Creation Date:  2022/01/05
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -52,7 +52,7 @@ param([string]$vmListFile = “vmlist.csv”, [string] $vCenterUser, [string] $vCent
 ################################################################################
 #vSphere settings and credentials
 $vCenterServer                     = "vcenter3.eucmobility.com"
-$ClusterName                       = "SM-Cluster"
+$ClusterName                       = "AMD-7002"
 $ResourcePoolName                  = ""
 $scsiControllerType                = "ParaVirtual" # ParaVirtual or VirtualLsiLogicSAS
 
@@ -110,8 +110,28 @@ function CreateVM ($vm)
 ################################################################################
 #               Function CreateVM                                              #
 ################################################################################
-    New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vm.vCPU -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder
-
+    #Determine if the portgroup is on a distributed or standard switch
+    $pg = Get-VirtualPortGroup -Name $vm.Network
+	
+	#Calculate sockets per core
+	$vCPU = [int]$vm.vCPU
+	$rem = $vCPU % 2
+	if ($rem -eq 0) #even
+		{ $corespersocket = (0.5 * $vCPU) }
+	else #odd
+		{ $corespersocket = $vCPU }
+	If (($vm.GuestId -like '*srv*') -or ($vm.GuestId -like '*Server*')) { $corespersocket = 1 } #Server OS so set cores per socket to 1
+	
+	#Create VM
+	If ($pg.ExtensionData.Config) #Portgroup is on Distributed virtual switch
+    {
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $vm.Network
+    }
+    else #Portgroup is on Standard virtual switch
+    {
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
+    }
+	#Read-Host -Prompt "Press any key to continue"
     $vmobj = Get-VM -Name $vm.Name
   
     #Reserve Memory
@@ -128,18 +148,6 @@ function CreateVM ($vm)
     #Change Network Adapter to vmxnet3
     Write-Host ("Set Network Adapter to vmxnet3") -ForegroundColor Yellow
     $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
-
-    #Attach Network Adapter to correct portgroup
-    Write-Host ("Connect to Network: " + $vm.Network) -ForegroundColor Yellow
-    $pg = Get-VirtualPortGroup -Name $vm.Network
-    If ($pg.ExtensionData.Config)
-    {
-        $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -Portgroup $vm.Network -Confirm:$false #Portgroup on Distributed virtual switch
-    }
-    else
-    {
-        $vmobj | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName $vm.Network -Confirm:$false #Portgroup on Standard virtual switch
-    }
 
     #Set Video Displays and Memory and deselect Secure Boot
     Write-Host ("Configure Video to " + $vm.Displays + " displays and " + $vm.VideoMem + " video RAM") -ForegroundColor Yellow
