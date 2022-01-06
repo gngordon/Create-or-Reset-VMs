@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.4
+    Version:        1.5
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/01/05
+    Creation Date:  2022/01/06
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -125,13 +125,13 @@ function CreateVM ($vm)
 	#Create VM
 	If ($pg.ExtensionData.Config) #Portgroup is on Distributed virtual switch
     {
-		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $vm.Network
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $pg
     }
     else #Portgroup is on Standard virtual switch
     {
 		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
     }
-	#Read-Host -Prompt "Press any key to continue"
+	Read-Host -Prompt "Press any key to continue"
     $vmobj = Get-VM -Name $vm.Name
   
     #Reserve Memory
