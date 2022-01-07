@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.5
+    Version:        1.6
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/01/06
+    Creation Date:  2022/01/07
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -131,7 +131,7 @@ function CreateVM ($vm)
     {
 		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
     }
-	Read-Host -Prompt "Press any key to continue"
+	#Read-Host -Prompt "Press any key to continue"
     $vmobj = Get-VM -Name $vm.Name
   
     #Reserve Memory
