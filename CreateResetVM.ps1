@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.6
+    Version:        1.7
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/01/07
+    Creation Date:  2022/02/08
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -113,23 +113,15 @@ function CreateVM ($vm)
     #Determine if the portgroup is on a distributed or standard switch
     $pg = Get-VirtualPortGroup -Name $vm.Network
 	
-	#Calculate sockets per core
 	$vCPU = [int]$vm.vCPU
-	$rem = $vCPU % 2
-	if ($rem -eq 0) #even
-		{ $corespersocket = (0.5 * $vCPU) }
-	else #odd
-		{ $corespersocket = $vCPU }
-	If (($vm.GuestId -like '*srv*') -or ($vm.GuestId -like '*Server*')) { $corespersocket = 1 } #Server OS so set cores per socket to 1
-	
 	#Create VM
 	If ($pg.ExtensionData.Config) #Portgroup is on Distributed virtual switch
     {
-		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $pg
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $vm.corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $pg
     }
     else #Portgroup is on Standard virtual switch
     {
-		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $vm.corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
     }
 	#Read-Host -Prompt "Press any key to continue"
     $vmobj = Get-VM -Name $vm.Name

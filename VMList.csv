@@ -1,7 +1,7 @@
-﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
-Win10-21H1ENT,21H1ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
-Win10-20H2ENT,20H2ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
-Win10-2004ENT,2004ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
-Win10-1909ENT,1909ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
-Win10-1809ENT,1809ENT,vsanDatastore,Lab,Win10,40,4,2,4,128MB,vmx-14,windows9_64Guest
-Server2019DC,Server2019DC,vsanDatastore,Lab,Server,60,4,4,4,128MB,vmx-14,windows2019srv_64Guest
+﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,CoresPerSocket,Displays,VideoMem,HWVersion,GuestId
+Win11-21H2ENT,Win11-21H2ENT,esx3ssd0,Lab,Win11,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
+Win10-21H2ENT,Win10-21H2ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
+Win10-21H1ENT,Win10-21H1ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
+Win10-20H2ENT,Win10-20H2ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
+Server2022DC,Server2022DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest
+Server2019DC,Server2019DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest
