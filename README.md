@@ -13,7 +13,7 @@ USAGE
 .\createresetvm.ps1 [vmlist.csv] [vCenterUser] [vCenterPassword] [MDTUser] [MDTPassword]
 
 WHERE
-vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
+vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId,vGPU
 vCenterUser      = Username for vCenter Server.
 vCenterPassword  = Password for vCenter Server user.
 MDTUser          = Username with rights to the MDT SQL database.
@@ -28,4 +28,10 @@ EXAMPLES
 REQUIREMENTS
 Requires PowerCLI.
 Change variables for vCenter and the MDT SQL database.
-List of VMs in comma separated file.
+Settings.ini = Contains the variables for vCenter and the MDT SQL database. Change as required.
+List of VMs in comma separated file. (defaults to vmlist.csv)
+
+SETUP
+Edit the settings.ini file - Change the vSphere values, the MDT SQL information, and tune the default behaviour of the script.
+
+Edit the vmlist.csv file to define your VMs

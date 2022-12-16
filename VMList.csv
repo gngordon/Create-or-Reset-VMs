@@ -1,7 +1,7 @@
-﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,CoresPerSocket,Displays,VideoMem,HWVersion,GuestId
-Win11-21H2ENT,Win11-21H2ENT,esx3ssd0,Lab,Win11,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
-Win10-21H2ENT,Win10-21H2ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
-Win10-21H1ENT,Win10-21H1ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
-Win10-20H2ENT,Win10-20H2ENT,esx3ssd0,Lab,Win10,40,4,2,2,4,128MB,vmx-19,windows9_64Guest
-Server2022DC,Server2022DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest
-Server2019DC,Server2019DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest
+﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,CoresPerSocket,Displays,VideoMem,HWVersion,GuestId,vGPU
+Win11-22H2ENT,Win11-22H2ENT,esx3ssd0,Lab,Win11,52,4,2,2,4,128MB,vmx-20,windows9_64Guest,false
+Win11-21H2ENT,Win11-21H2ENT,esx3ssd0,Lab,Win11,52,4,2,2,4,128MB,vmx-20,windows9_64Guest,grid_rtx6000-1q
+Win10-22H2ENT,Win10-22H2ENT,esx3ssd0,Lab,Win10,52,4,2,2,4,128MB,vmx-19,windows9_64Guest,false
+Win10-21H2ENT,Win10-21H2ENT,esx3ssd0,Lab,Win10,52,4,2,2,4,128MB,vmx-19,windows9_64Guest,false
+Server2022DC,Server2022DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest,false
+Server2019DC,Server2019DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest,false

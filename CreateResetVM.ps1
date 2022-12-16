@@ -2,14 +2,14 @@
 .SYNOPSIS
 Script to select VMs to create or reset, and then add them to Microsoft Deployment Toolkit, power on and open console.
 Requires PowerCLI.
-Change variables for vCenter and the MDT SQL database below.
-List of VMs in comma separated file.
+Settings.ini = Contains the variables for vCenter and the MDT SQL database. Change as required.
+List of VMs in comma separated file. (defaults to vmlist.csv)
 
 .USAGE
      .\createresetvm.ps1 [vmlist.csv] [vCenterUser] [vCenterPassword] [MDTUser] [MDTPassword]
      
      WHERE
-         vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
+         vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId,vGPU
          vCenterUser      = Username for vCenter Server.
          vCenterPassword  = Password for vCenter Server user.
          MDTUser          = Username with rights to the MDT SQL database.
@@ -31,9 +31,9 @@ List of VMs in comma separated file.
     *Optionally open remote console
  
  .NOTES
-    Version:        1.7
+    Version:        2.0
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/02/08
+    Creation Date:  2022/12/16
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -50,30 +50,39 @@ param([string]$vmListFile = “vmlist.csv”, [string] $vCenterUser, [string] $vCent
 ################################################################################
 #                                    Variables                                 #
 ################################################################################
-#vSphere settings and credentials
-$vCenterServer                     = "vcenter3.eucmobility.com"
-$ClusterName                       = "AMD-7002"
-$ResourcePoolName                  = ""
-$scsiControllerType                = "ParaVirtual" # ParaVirtual or VirtualLsiLogicSAS
+$SettingsFile			= "settings.ini"
 
-#SQL Server settings for MDT database
-$SQLServer                         = "sql1"
-$SQLPort                           = 1433
-$SQLDatabase                       = "mdt"
-$SQLIntegratedAuth                 = $True
-$global:SQLConnected               = $False
-
-#Control default settings
-$global:AddtoMDT                   = $True
-$global:PauseforApps               = $True
-$global:StartVM                    = $True
-$global:OpenConsole                = $True
-$global:Demo                       = $False
-
-$MacAddress                        = "00:00:00:00:00:00"
+$global:SQLConnected    = $False
+$global:vcConnected		= $false
+$MacAddress             = "00:00:00:00:00:00"
 #endregion variables
 
-function Initialize_Env
+function ImportIni
+{
+################################################################################
+# Function to parse token values from a .ini configuration file                #
+################################################################################
+	param ($file)
+
+	$ini = @{}
+	switch -regex -file $file
+	{
+            "^\s*#" {
+                continue
+            }
+    		"^\[(.+)\]$" {
+        		$section = $matches[1]
+        		$ini[$section] = @{}
+    		}
+    		"([A-Za-z0-9#_]+)=(.+)" {
+        		$name,$value = $matches[1..2]
+        		$ini[$section][$name] = $value.Trim()
+    		}
+	}
+	$ini
+}
+
+function Initialize_Env ($vCenterServer)
 {
 ################################################################################
 #               Function Initialize_Env                                        #
@@ -81,31 +90,35 @@ function Initialize_Env
     # --- Initialize PowerCLI Modules ---
     #Get-Module -ListAvailable VMware* | Import-Module
     Import-Module VMware.VimAutomation.Core
-    Set-PowerCLIConfiguration -Scope User -ParticipateInCeip $false -Confirm:$false
-    Set-PowerCLIConfiguration -InvalidCertificateAction ignore -Confirm:$false
-    Set-PowerCLIConfiguration -DefaultVIServerMode Multiple -Confirm:$false
+	Set-PowerCLIConfiguration -Scope User -ParticipateInCeip $false -InvalidCertificateAction ignore -DefaultVIServerMode Multiple -Confirm:$false
 
     # --- Connect to the vCenter server ---
+	$attempt = 0
     Do {
         Write-Output "", "Connecting To vCenter Server:"
-        #$vc = Connect-VIServer -Server $vCenterServer -User $vCenterUser -Password $vCenterPassword -Force -WarningAction SilentlyContinue
+		Write-Host ("Connecting To vCenter Server: " + $vCenterServer) -ForegroundColor Yellow
         If (!$vCenterUser)
         {
-            $vc = Connect-VIServer -Server $vCenterServer
+            $vc = Connect-VIServer -Server $vCenterServer -ErrorAction SilentlyContinue
         }
         elseif (!$vCenterPassword)
         {
-            $vc = Connect-VIServer -Server $vCenterServer -User $vCenterUser
+            $vc = Connect-VIServer -Server $vCenterServer -User $vCenterUser -ErrorAction SilentlyContinue
         }
         else
         {
-             $vc = Connect-VIServer -Server $vCenterServer -User $vCenterUser -Password $vCenterPassword -Force -WarningAction SilentlyContinue
+             $vc = Connect-VIServer -Server $vCenterServer -User $vCenterUser -Password $vCenterPassword -Force -ErrorAction SilentlyContinue
         }
-        If (!$vc.IsConnected) { Write-Host ("Failed to connect to vCenter Server. Let's try that again.")  -ForegroundColor Red }
-    } Until ($vc.IsConnected)
+        If (!$vc.IsConnected)
+		{
+			$attempt += 1
+			Write-Host ("Failed to connect to vCenter Server. Attempt " + $attempt + " of 3")  -ForegroundColor Red
+		}
+    } Until ($vc.IsConnected -or $attempt -ge 3)
+	If ($vc.IsConnected) { $global:vcConnected = $true }
 }
 
-function CreateVM ($vm)
+function CreateVM ($vm, $scsiControllerType, $StorageFormat)
 {
 ################################################################################
 #               Function CreateVM                                              #
@@ -113,18 +126,25 @@ function CreateVM ($vm)
     #Determine if the portgroup is on a distributed or standard switch
     $pg = Get-VirtualPortGroup -Name $vm.Network
 	
+	#Calculate sockets per core
 	$vCPU = [int]$vm.vCPU
+	$rem = $vCPU % 2
+	if ($rem -eq 0) #even
+		{ $corespersocket = (0.5 * $vCPU) }
+	else #odd
+		{ $corespersocket = $vCPU }
+	If (($vm.GuestId -like '*srv*') -or ($vm.GuestId -like '*Server*')) { $corespersocket = 1 } #Server OS so set cores per socket to 1
+	
 	#Create VM
 	If ($pg.ExtensionData.Config) #Portgroup is on Distributed virtual switch
     {
-		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $vm.corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $pg
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat $StorageFormat -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -Portgroup $pg
     }
     else #Portgroup is on Standard virtual switch
     {
-		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat Thin -NumCpu $vCPU -CoresPerSocket $vm.corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
+		New-VM -Name $vm.Name -ResourcePool $ResourcePool -HardwareVersion $vm.HWVersion -GuestId $vm.GuestId -DiskGB $vm.Disk -DiskStorageFormat $StorageFormat -NumCpu $vCPU -CoresPerSocket $corespersocket -MemoryGB $vm.Mem -Datastore $vm.Datastore -Location $vm.Folder -NetworkName $vm.Network
     }
-	#Read-Host -Prompt "Press any key to continue"
-    $vmobj = Get-VM -Name $vm.Name
+	$vmobj = Get-VM -Name $vm.Name
   
     #Reserve Memory
     Write-Host ("Reserving Memory") -ForegroundColor Yellow
@@ -159,6 +179,21 @@ function CreateVM ($vm)
         $boot.EfiSecureBootEnabled = $false
         $spec.BootOptions = $boot
 
+		Write-Host ("vGPU VM value: " + $vm.vGPU) -ForegroundColor Yellow
+		#Add vGPU if specified
+		if ($vm.vGPU -ne "false" -and $vm.vGPU -ne $null)
+		{
+			Write-Host ("Add vGPU with profile: " + $vm.vGPU) -ForegroundColor Yellow
+			$spec.deviceChange = New-Object VMware.Vim.VirtualDeviceConfigSpec[] (1)
+			$spec.deviceChange[0] = New-Object VMware.Vim.VirtualDeviceConfigSpec
+			$spec.deviceChange[0].operation = 'add'
+			$spec.deviceChange[0].device = New-Object VMware.Vim.VirtualPCIPassthrough
+			$spec.deviceChange[0].device.deviceInfo = New-Object VMware.Vim.Description
+			$spec.deviceChange[0].device.deviceInfo.summary = ''
+			$spec.deviceChange[0].device.deviceInfo.label = 'New PCI device'
+			$spec.deviceChange[0].device.backing = New-Object VMware.Vim.VirtualPCIPassthroughVmiopBackingInfo
+			$spec.deviceChange[0].device.backing.vgpu = $vm.vGPU
+		}
         $_.ExtensionData.ReconfigVM($spec)
     }
 
@@ -167,7 +202,7 @@ function CreateVM ($vm)
     $vmobj | New-AdvancedSetting -Name devices.hotplug -Value FALSE -Confirm:$False
 }
 
-function ResetVM ($vm)
+function ResetVM ($vm, $scsiControllerType, $StorageFormat )
 {
 ################################################################################
 #               Function ResetVM                                               #
@@ -188,7 +223,7 @@ function ResetVM ($vm)
     Get-HardDisk -vm $vmobj | Remove-HardDisk -DeletePermanently:$true -Confirm:$false #Remove old hard disk
     
     Write-Host ("Adding new hard disk") -ForegroundColor Yellow
-    New-HardDisk -VM $vmobj -CapacityGB $vm.Disk -StorageFormat thin | New-ScsiController -Type $scsiControllerType #Add new hard disk
+    New-HardDisk -VM $vmobj -CapacityGB $vm.Disk -StorageFormat $StorageFormat | New-ScsiController -Type $scsiControllerType #Add new hard disk
 }
 
 function Connect-MDTDatabase ($server, $port, $db, $user, $password) 
@@ -384,10 +419,30 @@ function Define_GUI
 
 #region main
 ################################################################################
-#              Main                                                            #
+#              Main
 ################################################################################
 Clear-Host
-$global:vmlist = Import-Csv $vmListFile
+
+#Check the settings file exists
+if (!(Test-path $SettingsFile)) {
+	WriteErrorString "Error: Configuration file ($SettingsFile) not found."
+	Exit
+}
+#Import settings variables
+$global:vars = ImportIni $SettingsFile
+If ($vars.Controls.Demo = "No") { $global:Demo = $False } Else { $global:Demo = $True }
+If ($vars.Controls.AddtoMDT = "Yes") { $global:AddtoMDT = $True } Else { $global:AddtoMDT = $False }
+If ($vars.Controls.PauseforApps = "Yes") { $global:PauseforApps = $True } Else { $global:PauseforApps = $False }
+If ($vars.Controls.StartVM = "Yes") { $global:StartVM = $True } Else { $global:StartVM = $False }
+If ($vars.Controls.OpenConsole = "Yes") { $global:OpenConsole = $True } Else { $global:OpenConsole = $False }
+If ($vars.Controls.SQLIntegratedAuth = "Yes") { $global:SQLIntegratedAuth = $True } Else { $global:SQLIntegratedAuth = $False }
+
+#Check the VM list file exists
+if (!(Test-path $vmListFile)) {
+	WriteErrorString "Error: VM list file ($vmListFile) not found."
+	Exit
+}
+$global:vmlist = Import-Csv $vmListFile #Import the list of VMs
 
 Define_GUI
 $result = $form.ShowDialog()
@@ -399,43 +454,45 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK)
 
     If ($selection)
     {
-        Write-Host ("Selected VMs:   " + $selection) -ForegroundColor Yellow
-        Write-Host ("Pause for Apps: " + $PauseforApps) -ForegroundColor Green
-        Write-Host ("Add to MDT:     " + $AddtoMDT) -ForegroundColor Green
-        Write-Host ("Start VM:       " + $StartVM) -ForegroundColor Green
-        Write-Host ("Open Console:   " + $OpenConsole) -ForegroundColor Green
-        Write-Host ("Demo:           " + $Demo) -ForegroundColor Green
+        Write-Host ("Selected VMs   : " + $selection) -ForegroundColor Yellow
+        Write-Host ("Pause for Apps : " + $PauseforApps) -ForegroundColor Green
+        Write-Host ("Add to MDT     : " + $AddtoMDT) -ForegroundColor Green
+        Write-Host ("Start VM       : " + $StartVM) -ForegroundColor Green
+        Write-Host ("Open Console   : " + $OpenConsole) -ForegroundColor Green
+        Write-Host ("Demo           : " + $Demo) -ForegroundColor Green
 
-        Initialize_Env
+		Initialize_Env $vars.vSphere.vCenterServer
+		If (!$vcConnected) { Exit }
         Add-Type -AssemblyName 'PresentationFramework'
     
-        If ($ResourcePoolName -ne "") { $ResourcePool = Get-ResourcePool -Name $ResourcePoolName }
-        Else { $ResourcePool = Get-Cluster -Name $ClusterName }
+        If ($vars.vSphere.ResourcePoolName -ne $vars.vSphere.ClusterName) { $ResourcePool = Get-ResourcePool -Name $vars.vSphere.ResourcePoolName }
+        Else { $ResourcePool = Get-Cluster -Name $vars.vSphere.ClusterName }
                 
         ForEach ($vm in $vmlist)
         {
             If ($selection.Contains($vm.Name))
             {
-                $Exists = get-vm -name $vm.name -ErrorAction SilentlyContinue
-                If ($Exists)
+                $VMExists = get-vm -name $vm.name -ErrorAction SilentlyContinue
+                If ($VMExists)
                 {
-                    #Reset the VM and replace its hard drive with a blank disk
+                    #VM already exists, so reset the VM and replace its hard drive with a new blank disk
                     Write-Host ("Resetting VM: " + $vm.Name) -ForegroundColor Yellow
-                    If (!$Demo) { ResetVM $vm }
+                    If (!$Demo) { ResetVM $vm $vars.vSphere.scsiControllerType $vars.vSphere.StorageFormat }
                 }
                 Else
                 { 
                     #Create a new VM
                     Write-Host ("Creating new VM: " + $vm.Name) -ForegroundColor Yellow
-                    If (!$Demo) { CreateVM -VM $vm }
+					If (!$Demo) { CreateVM -VM $vm $vars.vSphere.scsiControllerType $vars.vSphere.StorageFormat }
                 } 
                             
-                If ($AddtoMDT)
+                If ($AddtoMDT -and !$VMExists)
                 {
-                    If (!$SQLConnected) { Connect-MDTDatabase $SQLServer $SQLPort $SQLDatabase $SQLUser $SQLPassword } #Connect to MDT Database
+                    If (!$SQLConnected) { Connect-MDTDatabase $vars.SQL.SQLServer $vars.SQL.SQLPort $vars.SQL.SQLDatabase $SQLUser $SQLPassword } #Connect to MDT Database
                     If (!$Demo)
                     {
-                        $nic = Get-NetworkAdapter -vm $vm.name
+                        #Get the MAC address of the VMs nework adapter so that it can be added to the computer object in the MDT database.
+						$nic = Get-NetworkAdapter -vm $vm.name
                         $MacAddress = ($nic.MacAddress).ToUpper()
                     }
                     If ($SQLConnected)
