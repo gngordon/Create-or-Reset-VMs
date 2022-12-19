@@ -31,9 +31,9 @@ List of VMs in comma separated file. (defaults to vmlist.csv)
     *Optionally open remote console
  
  .NOTES
-    Version:        2.0
+    Version:        2.1
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/12/16
+    Creation Date:  2022/12/19
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -430,12 +430,12 @@ if (!(Test-path $SettingsFile)) {
 }
 #Import settings variables
 $global:vars = ImportIni $SettingsFile
-If ($vars.Controls.Demo = "No") { $global:Demo = $False } Else { $global:Demo = $True }
-If ($vars.Controls.AddtoMDT = "Yes") { $global:AddtoMDT = $True } Else { $global:AddtoMDT = $False }
-If ($vars.Controls.PauseforApps = "Yes") { $global:PauseforApps = $True } Else { $global:PauseforApps = $False }
-If ($vars.Controls.StartVM = "Yes") { $global:StartVM = $True } Else { $global:StartVM = $False }
-If ($vars.Controls.OpenConsole = "Yes") { $global:OpenConsole = $True } Else { $global:OpenConsole = $False }
-If ($vars.Controls.SQLIntegratedAuth = "Yes") { $global:SQLIntegratedAuth = $True } Else { $global:SQLIntegratedAuth = $False }
+If ($vars.Controls.Demo -like "No") { $global:Demo = $False } Else { $global:Demo = $True }
+If ($vars.Controls.AddtoMDT -like "Yes") { $global:AddtoMDT = $True } Else { $global:AddtoMDT = $False }
+If ($vars.Controls.PauseforApps -like "Yes") { $global:PauseforApps = $True } Else { $global:PauseforApps = $False }
+If ($vars.Controls.StartVM -like "Yes") { $global:StartVM = $True } Else { $global:StartVM = $False }
+If ($vars.Controls.OpenConsole -like "Yes") { $global:OpenConsole = $True } Else { $global:OpenConsole = $False }
+If ($vars.Controls.SQLIntegratedAuth -like "Yes") { $global:SQLIntegratedAuth = $True } Else { $global:SQLIntegratedAuth = $False }
 
 #Check the VM list file exists
 if (!(Test-path $vmListFile)) {
