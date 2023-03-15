@@ -31,9 +31,9 @@ List of VMs in comma separated file. (defaults to vmlist.csv)
     *Optionally open remote console
  
  .NOTES
-    Version:        2.1
+    Version:        2.2
     Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2022/12/19
+    Creation Date:  2023/03/15
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -249,7 +249,7 @@ function Connect-MDTDatabase ($server, $port, $db, $user, $password)
         {
             $connString = "Server = $server, $port; Database = $db; Integrated Security = False; User ID=$user; Password=$password"
         }
-        $global:mdtSQLConnection = New-Object System.Data.SqlClient.SqlConnection
+		$global:mdtSQLConnection = New-Object System.Data.SqlClient.SqlConnection
         $mdtSQLConnection.ConnectionString = $connString
         $mdtSQLConnection.Open()
         
@@ -435,7 +435,7 @@ If ($vars.Controls.AddtoMDT -like "Yes") { $global:AddtoMDT = $True } Else { $gl
 If ($vars.Controls.PauseforApps -like "Yes") { $global:PauseforApps = $True } Else { $global:PauseforApps = $False }
 If ($vars.Controls.StartVM -like "Yes") { $global:StartVM = $True } Else { $global:StartVM = $False }
 If ($vars.Controls.OpenConsole -like "Yes") { $global:OpenConsole = $True } Else { $global:OpenConsole = $False }
-If ($vars.Controls.SQLIntegratedAuth -like "Yes") { $global:SQLIntegratedAuth = $True } Else { $global:SQLIntegratedAuth = $False }
+If ($vars.SQL.SQLIntegratedAuth -like "Yes") { $global:SQLIntegratedAuth = $True } Else { $global:SQLIntegratedAuth = $False }
 
 #Check the VM list file exists
 if (!(Test-path $vmListFile)) {
