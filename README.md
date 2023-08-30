@@ -1,4 +1,4 @@
-Create or Reset VMs
+#Create or Reset VMs
 
 Helps with creating new VMs or resetting existing VMs. This is intended to be used with Microsoft Deployment Toolkit (MDT) to automate the creation of VMs that then PXE boot and follow the give MDT task sequence. MDT can then use the OS Optimization Tool and the MDT plugin to automate the installation of the agents and the optimization of Windows.
 
@@ -9,29 +9,23 @@ Helps with creating new VMs or resetting existing VMs. This is intended to be us
 	* Remote Console - Open a vSphere remote console to the VM.
 	* GUI that allows selection of VMs from a list in a comma separated file that contains the VM names and specifications.
 
-USAGE
+##Usage
 .\createresetvm.ps1 [vmlist.csv] [vCenterUser] [vCenterPassword] [MDTUser] [MDTPassword]
 
-WHERE
-vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId,vGPU
-vCenterUser      = Username for vCenter Server.
-vCenterPassword  = Password for vCenter Server user.
-MDTUser          = Username with rights to the MDT SQL database.
-MDTPassword      = Password for MDT database user
+###Where
+* vmlist.csv       = Comma delimited file with a VM per row. Fields are: Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,Displays,VideoMem,HWVersion,GuestId
+* vCenterUser      = Username for vCenter Server.
+* vCenterPassword  = Password for vCenter Server user.
+* MDTUser          = Username with rights to the MDT SQL database.
+* MDTPassword      = Password for MDT database user
 
-EXAMPLES
-.\createresetvm.ps1
-.\createresetvm.ps1 mylist.csv
-.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1!
-.\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1! mdtuser sqlpassword
+###Examples
+* .\createresetvm.ps1
+* .\createresetvm.ps1 mylist.csv
+* .\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1!
+* .\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1! mdtuser sqlpassword
 
-REQUIREMENTS
-Requires PowerCLI.
-Change variables for vCenter and the MDT SQL database.
-Settings.ini = Contains the variables for vCenter and the MDT SQL database. Change as required.
-List of VMs in comma separated file. (defaults to vmlist.csv)
-
-SETUP
-Edit the settings.ini file - Change the vSphere values, the MDT SQL information, and tune the default behaviour of the script.
-
-Edit the vmlist.csv file to define your VMs
+##Requirements
+* Requires PowerCLI.
+* Change variables for vCenter and the MDT SQL database.
+* List of VMs in comma separated file.
