@@ -1,7 +1,6 @@
 ﻿Name,TaskSeq,Datastore,Network,Folder,Disk,Mem,vCPU,CoresPerSocket,Displays,VideoMem,HWVersion,GuestId,vGPU
-Win11-22H2ENT,Win11-22H2ENT,esx3ssd0,Lab,Win11,52,4,2,2,4,128MB,vmx-20,windows9_64Guest,false
-Win11-21H2ENT,Win11-21H2ENT,esx3ssd0,Lab,Win11,52,4,2,2,4,128MB,vmx-20,windows9_64Guest,grid_rtx6000-1q
-Win10-22H2ENT,Win10-22H2ENT,esx3ssd0,Lab,Win10,52,4,2,2,4,128MB,vmx-19,windows9_64Guest,false
-Win10-21H2ENT,Win10-21H2ENT,esx3ssd0,Lab,Win10,52,4,2,2,4,128MB,vmx-19,windows9_64Guest,false
-Server2022DC,Server2022DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest,false
-Server2019DC,Server2019DC,esx3ssd0,Lab,Server,60,4,4,1,4,128MB,vmx-19,windows2019srv_64Guest,false
+Win11-24H2ENT,Win11-24H2ENT,esx3ssd0,DPG-VMs-VDI,Win11,90,4,2,2,4,128MB,vmx-20,windows11_64Guest,false
+Win11-23H2ENT,Win11-23H2ENT,esx3ssd0,DPG-VMs-VDI,Win11,90,4,2,2,4,128MB,vmx-20,windows11_64Guest,false
+Win11-23H2ENT,Win11-23H2ENTG,esx3ssd0,DPG-VMs-VDI,Win11,90,4,2,2,4,128MB,vmx-20,windows9_64Guest,grid_rtx6000-1q
+Server2025DC,Server2025DC,esx3ssd0,DPG-VMs-VDI,Server,90,4,4,1,4,128MB,vmx-20,windows2019srvNext_64Guest,false
+Server2022DC,Server2022DC,esx3ssd0,DPG-VMs-VDI,Server,90,4,4,1,4,128MB,vmx-20,windows2019srvNext_64Guest,false

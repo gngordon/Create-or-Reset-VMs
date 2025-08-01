@@ -18,8 +18,8 @@ List of VMs in comma separated file. (defaults to vmlist.csv)
 .EXAMPLES
      .\createresetvm.ps1
      .\createresetvm.ps1 mylist.csv
-     .\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1!
-     .\createresetvm.ps1 mylist.csv administrator@vsphere.local VMware1! mdtuser sqlpassword
+     .\createresetvm.ps1 mylist.csv administrator@vsphere.local Omnissa1!
+     .\createresetvm.ps1 mylist.csv administrator@vsphere.local Omnissa1! mdtuser sqlpassword
        
 .ACTIONS
     *Select VMS
@@ -31,20 +31,20 @@ List of VMs in comma separated file. (defaults to vmlist.csv)
     *Optionally open remote console
  
  .NOTES
-    Version:        2.2
-    Author:         Graeme Gordon - ggordon@vmware.com
-    Creation Date:  2023/03/15
+    Version:        3.0
+    Author:         Graeme Gordon - ggordon@omnissa.com
+    Creation Date:  2025/06/19
     Purpose/Change: Create or reset virtual machines
   
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
-    VMWARE,INC. BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    OMNISSA LLC. BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
     IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  #>
 
-param([string]$vmListFile = “vmlist.csv”, [string] $vCenterUser, [string] $vCenterPassword, [string] $SQLUser, [string] $SQLPassword )
+param([string]$vmListFile = "vmlist.csv", [string] $vCenterUser, [string] $vCenterPassword, [string] $SQLUser, [string] $SQLPassword )
 
 #region variables
 ################################################################################
